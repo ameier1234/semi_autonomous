@@ -4,31 +4,11 @@
 
 ros::Publisher pub;
 bool isTooClose;
-
-void teleopCallBack(const geometry_msgs::Twist::ConstPtr& msg)
-{
-  geometry_msgs::Twist autoCmd;
-  autoCmd.linear.x = 0;
-  autoCmd.angular.z = 3.14;
-
-  if(isTooClose)
-    {
-      pub.publish(autoCmd);
-    }
-  else
-    {
-      pub.publish(msg);
-    }
-
-}
-void sensorCallBack(const sensor_msgs::LaserScan::ConstPtr& msg)
-{
-  int center = msg->ranges.size() / 2;
-  isTooClose = msg->ranges[center] < 0.25;
-
-}
+float correctedCourse;
 
 float correctCourse(sensor_msgs::LaserScan scan);
+void teleopCallBack(const geometry_msgs::Twist::ConstPtr& msg);
+void sensorCallBack(const sensor_msgs::LaserScan::ConstPtr& msg);
 
 int main(int argc, char** argv)
 {
@@ -62,8 +42,44 @@ float correctCourse(sensor_msgs::LaserScan scan)
     }
 
 
-  //for now just return the direction of the largest node
+  //for now just return the direction of the longest range 
   return scan.angle_min + (indexOfLargest * scan.angle_increment);
 
 
 }
+
+ void teleopCallBack(const geometry_msgs::Twist::ConstPtr& msg)
+ {
+   geometry_msgs::Twist autoCmd;
+   autoCmd.linear.x = 0;
+   //autoCmd.angular.z = 3.14;
+
+   if(isTooClose)
+     {
+       autoCmd.angular.z = correctedCourse;
+       autoCmd.linear.x = -1;
+       pub.publish(autoCmd);
+     }
+   else
+     {
+       pub.publish(msg);
+     }
+
+ }
+
+ void sensorCallBack(const sensor_msgs::LaserScan::ConstPtr& msg)
+ {
+   int center = msg->ranges.size() / 2;
+
+   isTooClose = false;
+   for(int i  = center - 75; i < center + 75; i++)
+     {
+       if(msg->ranges[i] < 0.5)
+	 {
+	   isTooClose = true;
+	   correctedCourse = correctCourse(*msg);
+
+	 }
+
+     }
+ }
