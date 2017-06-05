@@ -1,0 +1,44 @@
+#include "ros/ros.h"
+#include "geometry_msgs/Twist.h"
+#include "sensor_msgs/LaserScan.h"
+
+ros::Publisher pub;
+bool isTooClose;
+
+void teleopCallBack(const geometry_msgs::Twist::ConstPtr& msg)
+{
+  geometry_msgs::Twist autoCmd;
+  autoCmd.linear.x = 0;
+  autoCmd.angular.z = 3.14;
+
+  if(isTooClose)
+    {
+      pub.publish(autoCmd);
+    }
+  else
+    {
+      pub.publish(msg);
+    }
+
+}
+void sensorCallBack(const sensor_msgs::LaserScan::ConstPtr& msg)
+{
+  int center = msg->ranges.size() / 2;
+  isTooClose = msg->ranges[center] < 0.25;
+
+}
+int main(int argc, char** argv)
+{
+  isTooClose = false;
+  ros::init(argc, argv, "Semi_autonomous");
+  ros::NodeHandle n;
+  ros::Subscriber sensor_sub = n.subscribe("/base_scan", 1000, sensorCallBack);
+  ros::Subscriber teleop_sub = n.subscribe("/temp_cmd_vel", 1000, teleopCallBack);
+  
+
+  
+  pub = n.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
+  ros::spin();
+
+  return 0;
+}

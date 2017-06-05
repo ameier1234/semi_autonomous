@@ -1,0 +1,12 @@
+<launch>
+
+
+<node pkg="semi_autonomous" type="semi_autonomous_node" name="Autonomous_Helper">
+</node>
+
+<node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="Teleop" output="screen">
+<remap from="/cmd_vel" to="temp_cmd_vel"/>
+</node> 
+
+
+</launch>
